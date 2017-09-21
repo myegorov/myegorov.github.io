@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>These are a few of my favorite things... - maksim.space </title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="Maksim Yegorov, myegorov, software engineer, collaborative editor, JSON, projects,"/>
+  <meta name="description" content="Cabinet of curiosities of Maksim Yegorov" />
+  <meta name="author" content="Maksim Yegorov">
+  <meta name="referrer" content="never" />
+  
+
+  <link rel="stylesheet" href="/assets/css/main.css" type="text/css" media="all">
+
+	<link rel="stylesheet" href="//brick.a.ssl.fastly.net/Karla:400,400i,700, 700i">
+	<link rel="stylesheet" href="//brick.a.ssl.fastly.net/Cormorant:400,400i,700, 700i">
+
+  <link rel="icon" href="/assets/img/favicon.ico" />
+
+  <link rel="stylesheet" href="/assets/js/highlight/styles/tomorrow-night-eighties.css">
+  </head>
+  <body>
+    <div id="wrapper">
+      <header>
+        <a class="back-to-home" href="/"><span class="back-arrow">&larr; </span>home</a>
+      </header>
+
+      <article class="an-article">
+        <div class="meta">
+          <h1>These are a few of my favorite things...</h1>
+          <span>Sep 20 &#x27;17</span>
+          <p>
+            
+          </p>
+        </div>
+
+        <p>Some brief notes on a couple of projects
+I&#39;ve been involved with this year for my edification and for
+profit ;)</p>
+<h2 id="-edit-along-https-github-com-myegorov-edit-along-"><a href="https://github.com/myegorov/edit-along">edit-along</a></h2>
+<h3 id="collaborative-in-browser-text-editor">Collaborative in-browser text editor</h3>
+<ul>
+<li>permit multiple clients to edit a file simultaneously</li>
+<li>optimize for low latency</li>
+<li>ensure consistency</li>
+<li>bonus: suitable for any format for which <em>diff</em> and <em>patch</em>
+  algorithms exist</li>
+</ul>
+<h3 id="challenges">Challenges</h3>
+<ul>
+<li>onboard new member (snapshot) and offboard clients</li>
+<li>consensus to restore consistency (dead proc revived &amp; syncing up)</li>
+<li>synchronization strategies<ol>
+<li>pessimistic concurrency</li>
+<li>optimistic concurrency</li>
+</ol>
+</li>
+</ul>
+<h3 id="pessimistic-concurrency-control">Pessimistic concurrency control</h3>
+<p>Methods to achieve consistency</p>
+<ul>
+<li>mutual exclusion (locking)</li>
+<li>total order of delivering updates to clients</li>
+<li>consensus to restore consistency in the event of network failure</li>
+<li>clients block each other&#39;s progress</li>
+</ul>
+<h3 id="can-this-approach-scale-">Can this approach scale?</h3>
+<p>Consider the time complexity of mutual exclution:</p>
+<ul>
+<li>typing @ 50 wpm -&gt; assuming edit proportional to characters typed, this amounts to 300ms per edit</li>
+<li>O(log n) messages exchanged to enter the critical section, 
+  e.g. O(3) requests for 5 clients using the service</li>
+<li>approx. 50ms per request suggests 150ms to enter the critical section</li>
+<li><strong>approx. 2 processes switching back and forth and editing without a lag</strong></li>
+</ul>
+<h3 id="any-alternatives-">Any alternatives?</h3>
+<p>Enters optimistic concurrency control:</p>
+<ul>
+<li>reduce latency at the cost of some loss of fidelity</li>
+<li>guarantee eventual consistency</li>
+<li><a href="https://neil.fraser.name/writing/sync/">Differential Synchronization</a> algorithm developed by Neil 
+  Fraser @ Google (mid &#39;00s)</li>
+<li>used by Eclipse &amp; Gedit plugins</li>
+<li>more robust algorithms (e.g. <a href="https://en.wikipedia.org/wiki/Operational_transformation">Operational Transformation</a>) exist, but
+  their implementation is considerably more involved</li>
+</ul>
+<h3 id="the-algorithm">The algorithm</h3>
+<figure>
+  <img src="https://neil.fraser.name/writing/sync/diff2.gif" alt="differential synchronization (source: )" class="opening-cover-image"/>
+  <figcaption>Differential synchronization algorithm (source: <a href="https://neil.fraser.name/writing/sync/">https://neil.fraser.name/writing/sync/</a> ) </figcaption>
+</figure>
+
+<h3 id="normal-operations">Normal operations</h3>
+<ul>
+<li>works symmetrically on the client &amp; server</li>
+<li>continuous cycling of <em>diff</em> and <em>patch</em> operations</li>
+<li>use vector clocks to infer causal ordering</li>
+<li>relies on the fact that edits will likely share <em>recognizable context</em></li>
+<li>patches applied on the best-effort basis: if not enough recognizable 
+  context, patches may fail; they will then show up negatively in the 
+  following half-cycle</li>
+</ul>
+<h3 id="error-scenarios">Error scenarios</h3>
+<p>The algorithm is forgiving of unreliable networks:</p>
+<ul>
+<li>duplicate packet</li>
+<li>lost return packet</li>
+<li>lost outbound packet</li>
+<li>out-of-order packet</li>
+<li>other memory/network corruption scenarios:
+  worst come to worst, the server will re-initialize the client</li>
+</ul>
+<h2 id="-json-distill-https-github-com-meetearnest-json-distill-"><a href="https://github.com/meetearnest/json-distill">json-distill</a></h2>
+<p>This past summer I had the good fortune to work in the company of some
+very capable developers and all around wonderful people at <a href="https://www.earnest.com/">Earnest</a>.
+One of the two projects I completed while there turned out to be particularly
+rewarding and involved designing a tiny domain specific language and implementing an
+interpreter to go with it for querying JSON. In the process, I discovered
+the joy of logic programming and conceived of a pet project to work on in
+the coming months. The GitHub link is off limits at present, but I&#39;m
+hoping that the project will be released under an open source license.</p>
+<h3 id="problem-statement-">Problem statement:</h3>
+<ul>
+<li>under the ideal circumstances, the service endpoint exactly matches the client&#39;s data requirements</li>
+<li>downsides: impractical for the current division of labor between the back-
+  and front-end teams, multiplies one-off API endpoints, services coupled to UI</li>
+</ul>
+<h3 id="what-if-">What if...</h3>
+<ul>
+<li>the back-end could be merely a gateway wrapping and abstracting the access to
+  private data</li>
+<li>a service exposes <em>a scope</em> to the client</li>
+<li>the client can fetch more or less on demand</li>
+<li>reduces the number of requests, data transfer and one-off endpoints</li>
+<li>redefines the client-server relationship in terms of 
+  pure information asymmetry:<ol>
+<li>the server knows private data models,
+ is ignorant of client&#39;s needs,
+ can distinguish among clients with different access privileges</li>
+<li>the client has a contract with the server to
+ expose some data scope and some computation capacity</li>
+</ol>
+</li>
+</ul>
+<h3 id="industrial-strength-solution">Industrial strength solution</h3>
+<ul>
+<li><code>GraphQL</code>, <code>Falcor</code> etc.</li>
+<li>require significant re-tooling, which limits the rate of adoption</li>
+</ul>
+<h3 id="what-i-set-out-to-do">What I set out to do</h3>
+<ul>
+<li>an MVP implementing a fraction of the bells and whistles that
+  <code>GraphQL</code> provides</li>
+<li>focus on what matters, solve the majority of use cases without the complexity</li>
+<li>upside: no retooling for an existing API</li>
+<li>end result: a JS library shared between the client and server:
+  <a href="https://github.com/meetearnest/json-distill">https://github.com/meetearnest/json-distill</a></li>
+</ul>
+<h3 id="how-do-we-typically-deal-with-big-json-">How do we typically deal with big JSON?</h3>
+<ul>
+<li>select data following specific paths, or</li>
+<li>pass response through <code>filter_1 | ... | filter_n</code></li>
+<li>downsides: brittle, cognitive overhead from keeping track of
+  extraneous details</li>
+</ul>
+<h3 id="is-there-a-query-language-for-json-">Is there a query language for JSON?</h3>
+<blockquote>
+<p>asked: 8 years, 3 months ago</p>
+<p>viewed: 87,895 times</p>
+<p>active: 1 month ago</p>
+</blockquote>
+<p><a href="https://stackoverflow.com/questions/777455/is-there-a-query-language-for-json">https://stackoverflow.com/questions/777455/is-there-a-query-language-for-json</a></p>
+<h3 id="can-we-do-it-in-a-simpler-way-">Can we do it in a simpler way?</h3>
+<p>Sample JSON:</p>
+<pre><code class="hljs javascript"><span class="hljs-number">1</span>     {
+<span class="hljs-number">2</span>       ...
+<span class="hljs-number">3</span>         <span class="hljs-string">"ancestor"</span>: ...
+            ...
+              <span class="hljs-string">"parent"</span>: {
+                <span class="hljs-string">"child"</span>: ...,
+                <span class="hljs-string">"sibling"</span>: ...,
+                ...
+              },
+            ...
+          ...
+        ...
+<span class="hljs-number">13852</span> }</code></pre>
+
+<p>Query to match:</p>
+<pre><code class="hljs javascript"><span class="hljs-keyword">const</span> query = `
+{
+  ancestor {
+    parent {@parent
+        child
+        sibling
+    }
+  }
+}
+`;</code></pre>
+
+<p>A few additional features:</p>
+<pre><code class="hljs javascript"><span class="hljs-keyword">const</span> query = `
+{
+  ancestor {
+    parent (${aFilter}) {@parent @container
+        child
+        sibling
+    }
+  }
+}
+`;</code></pre>
+
+<p>Can in principle serialize and pass with the query a callback to
+filter results in the context made available by the service:</p>
+<pre><code class="hljs javascript"><span class="hljs-keyword">const</span> { match } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'json-distill'</span>);
+
+<span class="hljs-keyword">const</span> aFilter = (results, context) =&gt; {
+    <span class="hljs-comment">// ...filter 'results' with access to 'context'</span>
+};
+
+<span class="hljs-keyword">const</span> query = `
+{
+  ancestor {
+    parent (${aFilter}) {@parent @container
+        child
+        sibling
+    }
+  }
+}
+`;</code></pre>
+
+<h3 id="main-use-case-match-on-the-server">Main use case: match on the server</h3>
+<ul>
+<li>a client sends its data requirements to the service as a query template</li>
+<li>the service fulfills the custom query</li>
+<li>execute custom JS within a virtual environment on the server
+  (<code>vm2</code> sandbox built into the library)</li>
+<li>demo:
+  <a href="https://github.com/meetearnest/json-distill/tree/master/test/sample-service">https://github.com/meetearnest/json-distill/tree/master/test/sample-service</a></li>
+</ul>
+<p>However, we&#39;re not limited to server-side processing.  Can pattern
+match JSON from within any module:</p>
+<pre><code class="hljs javascript"><span class="hljs-keyword">const</span> results = fetch(
+    <span class="hljs-string">'https://www.googleapis.com/...'</span>)
+  .then(res =&gt; res.json())
+  .then(json =&gt; match(query, json));</code></pre>
+
+<h3 id="np-hard-crux">NP-hard crux</h3>
+<p>Reasons for optimism: typical JSON object to be pattern matched is not significantly larger
+than the DOM tree that the language of CSS selectors or jQuery target.</p>
+<ul>
+<li>query can be interpreted as a set of constraints</li>
+<li>constraint programming is an interesting area of AI in itself</li>
+<li>lack of quality JS libraries for constraint programming</li>
+<li>currently using a proof-of-concept level <a href="https://github.com/shd101wyy/logic.js">project</a>
+  that implements a tiny subset of <code>Prolog</code>
+  functionality for defining and solving constraints: inefficient search, no inference of constraints, no pruning</li>
+<li>future plan: port <a href="https://github.com/clojure/core.logic"><code>clojure/core.logic</code></a> to JS, rather than implement
+  ad hoc search logic</li>
+</ul>
+
+      </article>
+
+</div>
+</body>
+</html>
